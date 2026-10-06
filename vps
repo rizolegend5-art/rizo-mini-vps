@@ -1,371 +1,696 @@
 #!/data/data/com.termux/files/usr/bin/bash
+
+# ============================================================
+# RIZO HACKER RGB — MINI VPS / BOT HOST MANAGER
+# ============================================================
+
 set -u
 
 RIZO_HOME="${RIZO_HOME:-$HOME/rizo-vps}"
 BOTS_DIR="$RIZO_HOME/bots"
 LOGS_DIR="$RIZO_HOME/logs"
 STATE_DIR="$RIZO_HOME/state"
-CONFIG_DIR="$RIZO_HOME/config"
-SELF="$RIZO_HOME/manager/rizo"
+MANAGER_DIR="$RIZO_HOME/manager"
 
-mkdir -p "$BOTS_DIR" "$LOGS_DIR" "$STATE_DIR" "$CONFIG_DIR" "$RIZO_HOME/manager"
+mkdir -p "$BOTS_DIR" "$LOGS_DIR" "$STATE_DIR" "$MANAGER_DIR"
 
-die() { echo "❌ $*" >&2; return 1 2>/dev/null || exit 1; }
-bot_dir() { printf '%s/%s' "$BOTS_DIR" "$1"; }
-session() { printf 'rizo-%s' "$1"; }
-log_file() { printf '%s/%s.log' "$LOGS_DIR" "$1"; }
+# -------------------- RGB COLORS --------------------
+
+RESET='\033[0m'
+BOLD='\033[1m'
+
+RED='\033[1;91m'
+MAGENTA='\033[1;95m'
+BLUE='\033[1;94m'
+CYAN='\033[1;96m'
+GREEN='\033[1;92m'
+YELLOW='\033[1;93m'
+WHITE='\033[1;97m'
+GRAY='\033[1;90m'
+
+# -------------------- BASIC HELPERS --------------------
+
+pause() {
+    sleep 0.15
+}
+
+line() {
+    echo -e "${MAGENTA}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+}
 
 valid_name() {
     [[ "${1:-}" =~ ^[A-Za-z0-9._-]+$ ]]
 }
 
-require_tools() {
-    local missing=()
-    command -v python >/dev/null 2>&1 || missing+=("python")
-    command -v tmux >/dev/null 2>&1 || missing+=("tmux")
-    command -v unzip >/dev/null 2>&1 || missing+=("unzip")
-    if ((${#missing[@]})); then
-        echo "Missing: ${missing[*]}"
-        echo "Run: pkg install -y python tmux unzip"
-        return 1
-    fi
+bot_dir() {
+    echo "$BOTS_DIR/$1"
 }
 
-find_entry() {
-    local d="$1" entry
-    if [[ -f "$d/start.sh" ]]; then echo "start.sh"; return; fi
-    if [[ -f "$d/bot.py" ]]; then echo "bot.py"; return; fi
-    if [[ -f "$d/main.py" ]]; then echo "main.py"; return; fi
-    if [[ -f "$d/index.py" ]]; then echo "index.py"; return; fi
-    if [[ -f "$d/app.py" ]]; then echo "app.py"; return; fi
-    echo ""
+bot_session() {
+    echo "rizo-$1"
 }
 
-read_env() {
-    local d="$1"
-    if [[ -f "$d/.env" ]]; then
-        set -a
-        # shellcheck disable=SC1090
-        source "$d/.env"
-        set +a
-    elif [[ -f "$d/bot.env" ]]; then
-        set -a
-        # shellcheck disable=SC1090
-        source "$d/bot.env"
-        set +a
-    fi
-}
-
-write_meta() {
-    local name="$1" entry="$2"
-    printf 'ENTRY=%q\n' "$entry" > "$(bot_dir "$name")/.rizo-meta"
-}
-
-load_entry() {
-    local d="$1"
-    if [[ -f "$d/.rizo-meta" ]]; then
-        # shellcheck disable=SC1090
-        source "$d/.rizo-meta"
-        [[ -n "${ENTRY:-}" ]] && { echo "$ENTRY"; return; }
-    fi
-    find_entry "$d"
+bot_log() {
+    echo "$LOGS_DIR/$1.log"
 }
 
 is_running() {
-    tmux has-session -t "$(session "$1")" 2>/dev/null
+    tmux has-session -t "$(bot_session "$1")" 2>/dev/null
 }
 
-ensure_venv() {
-    local d="$1"
-    [[ -x "$d/venv/bin/python" ]] || python -m venv "$d/venv"
+# -------------------- RGB TITLE --------------------
+
+rgb_text() {
+    echo -e "${RED}R${MAGENTA}I${BLUE}Z${CYAN}O${GREEN} H${YELLOW}A${RED}C${MAGENTA}K${BLUE}E${CYAN}R${RESET}"
 }
 
-install_bot() {
-    local name="${1:-}" d
-    valid_name "$name" || die "Usage: rizo install <bot-name>"
-    d="$(bot_dir "$name")"
-    [[ -d "$d" ]] || die "Bot does not exist: $name"
-    ensure_venv "$d"
+# -------------------- BANNER --------------------
 
-    echo "🐍 Creating/updating environment..."
-    "$d/venv/bin/python" -m pip install --upgrade pip
+banner() {
+    clear
 
-    if [[ -f "$d/requirements.txt" ]]; then
-        echo "📦 Installing requirements..."
-        "$d/venv/bin/pip" install -r "$d/requirements.txt" || return 1
-    else
-        echo "ℹ️ No requirements.txt found; skipping package install."
-    fi
+    echo
+    echo -e "${RED}██████╗ ${MAGENTA}██╗${BLUE}███████╗ ${CYAN}██████╗ ${GREEN}    ██╗  ██╗ █████╗${RESET}"
+    echo -e "${RED}██╔══██╗${MAGENTA}██║${BLUE}╚══███╔╝${CYAN}██╔═══██╗${GREEN}    ██║  ██║██╔══██╗${RESET}"
+    echo -e "${RED}██████╔╝${MAGENTA}██║${BLUE}  ███╔╝ ${CYAN}██║   ██║${GREEN}    ███████║███████║${RESET}"
+    echo -e "${RED}██╔══██╗${MAGENTA}██║${BLUE} ███╔╝  ${CYAN}██║   ██║${GREEN}    ██╔══██║██╔══██║${RESET}"
+    echo -e "${RED}██║  ██║${MAGENTA}██║${BLUE}███████╗${CYAN}╚██████╔╝${GREEN}    ██║  ██║██║  ██║${RESET}"
+    echo -e "${RED}╚═╝  ╚═╝${MAGENTA}╚═╝${BLUE}╚══════╝${CYAN} ╚═════╝ ${GREEN}    ╚═╝  ╚═╝╚═╝  ╚═╝${RESET}"
 
-    local entry
-    entry="$(load_entry "$d")"
-    [[ -n "$entry" ]] && write_meta "$name" "$entry"
-    echo "✅ Installed: $name"
+    echo
+    echo -e "${BOLD}${RED}              R I Z O   H A C K E R${RESET}"
+    echo -e "${BOLD}${MAGENTA}           A N D R O I D   M I N I   V P S${RESET}"
+    echo
+    line
+    echo -e "${CYAN}        [${WHITE} BOT HOST ${CYAN}]  [${WHITE} MULTI PROCESS ${CYAN}]"
+    echo -e "${BLUE}        [${WHITE} AUTO RESTART ${BLUE}] [${WHITE} TMUX ENGINE ${BLUE}]"
+    line
+    echo
 }
+
+# -------------------- COMMAND PANEL --------------------
+
+command_panel() {
+
+    echo -e "${BOLD}${CYAN}┌─[ ${WHITE}RIZO HACKER COMMAND CENTER${CYAN} ]──────────────────────────┐${RESET}"
+
+    echo -e "${CYAN}│ ${RED}01${CYAN}  ${WHITE}CREATE${GRAY}       Create new bot${CYAN}                         │"
+    echo -e "${CYAN}│ ${MAGENTA}02${CYAN}  ${WHITE}UPLOAD${GRAY}       Upload ZIP bot${CYAN}                         │"
+    echo -e "${CYAN}│ ${BLUE}03${CYAN}  ${WHITE}INSTALL${GRAY}      Install requirements${CYAN}                 │"
+    echo -e "${CYAN}│ ${GREEN}04${CYAN}  ${WHITE}START${GRAY}        Start bot${CYAN}                            │"
+    echo -e "${CYAN}│ ${YELLOW}05${CYAN}  ${WHITE}STOP${GRAY}         Stop bot${CYAN}                             │"
+    echo -e "${CYAN}│ ${RED}06${CYAN}  ${WHITE}RESTART${GRAY}      Restart bot${CYAN}                         │"
+    echo -e "${CYAN}│ ${MAGENTA}07${CYAN}  ${WHITE}STATUS${GRAY}       Check status${CYAN}                         │"
+    echo -e "${CYAN}│ ${BLUE}08${CYAN}  ${WHITE}LIST${GRAY}         List all bots${CYAN}                       │"
+    echo -e "${CYAN}│ ${GREEN}09${CYAN}  ${WHITE}LOGS${GRAY}         View logs${CYAN}                           │"
+    echo -e "${CYAN}│ ${YELLOW}10${CYAN}  ${WHITE}SYSTEM${GRAY}       Device resources${CYAN}                   │"
+    echo -e "${CYAN}│ ${RED}11${CYAN}  ${WHITE}INFO${GRAY}         Bot information${CYAN}                    │"
+    echo -e "${CYAN}│ ${MAGENTA}12${CYAN}  ${WHITE}DELETE${GRAY}       Delete bot${CYAN}                          │"
+    echo -e "${CYAN}│ ${BLUE}13${CYAN}  ${WHITE}HELP${GRAY}         Help menu${CYAN}                           │"
+
+    echo -e "${CYAN}└─────────────────────────────────────────────────────────────┘${RESET}"
+    echo
+}
+
+# -------------------- CREATE --------------------
 
 create_bot() {
-    local name="${1:-}" d
-    valid_name "$name" || die "Usage: rizo create <bot-name>"
-    d="$(bot_dir "$name")"
-    [[ ! -e "$d" ]] || die "Bot already exists: $name"
 
-    mkdir -p "$d"
-    python -m venv "$d/venv" || { rm -rf "$d"; return 1; }
+    local name="${1:-}"
 
-    cat > "$d/.env" <<'EOF'
-# Put environment variables here.
-# Example:
-# BOT_TOKEN=
-EOF
+    if ! valid_name "$name"; then
+        echo -e "${RED}❌ Usage: rizo create <bot-name>${RESET}"
+        return 1
+    fi
 
-    cat > "$d/requirements.txt" <<'EOF'
-# Add your bot dependencies here.
+    local dir
+    dir="$(bot_dir "$name")"
+
+    if [[ -d "$dir" ]]; then
+        echo -e "${YELLOW}⚠ Bot already exists: $name${RESET}"
+        return 1
+    fi
+
+    mkdir -p "$dir"
+
+    echo -e "${CYAN}[*] Creating Python environment...${RESET}"
+
+    python -m venv "$dir/venv"
+
+    cat > "$dir/requirements.txt" <<'EOF'
+# Add your Python packages here.
 # Example:
 # aiogram>=3.7,<4.0
 EOF
 
-    cat > "$d/bot.py" <<'EOF'
-import os
-print("RIZO example bot started.")
-print("Add your own bot code and requirements.txt.")
-print("Environment is available through os.getenv().")
+    cat > "$dir/.env" <<'EOF'
+# Bot environment variables
+# Example:
+# BOT_TOKEN=
 EOF
 
-    write_meta "$name" "bot.py"
-    echo "✅ Created: $name"
-    echo "📁 $d"
-    echo "Next: replace bot.py, edit .env, then run:"
+    cat > "$dir/bot.py" <<'EOF'
+print("RIZO HACKER BOT")
+print("Replace this file with your own bot code.")
+EOF
+
+    echo "ENTRY=bot.py" > "$dir/.rizo-meta"
+
+    echo
+    echo -e "${GREEN}╔════════════════════════════════════════╗${RESET}"
+    echo -e "${GREEN}║        BOT CREATED SUCCESSFULLY        ║${RESET}"
+    echo -e "${GREEN}╚════════════════════════════════════════╝${RESET}"
+    echo
+    echo -e "${WHITE}Name:${RESET} $name"
+    echo -e "${WHITE}Path:${RESET} $dir"
+    echo
+    echo -e "${CYAN}Next:${RESET}"
+    echo "  rizo upload $name /path/to/bot.zip"
     echo "  rizo install $name"
     echo "  rizo start $name"
 }
 
+# -------------------- UPLOAD --------------------
+
 upload_bot() {
-    local name="${1:-}" zip="${2:-}" d tmp
-    valid_name "$name" || die "Usage: rizo upload <bot-name> <zip-file>"
-    [[ -f "$zip" ]] || die "ZIP not found: $zip"
-    d="$(bot_dir "$name")"
-    [[ -d "$d" ]] || die "Create the bot first: rizo create $name"
 
-    tmp="$(mktemp -d)"
-    unzip -q -o "$zip" -d "$tmp" || { rm -rf "$tmp"; die "Invalid ZIP archive"; }
+    local name="${1:-}"
+    local zip="${2:-}"
 
-    # If the archive contains one top-level directory, use its contents.
-    local source="$tmp"
-    local count
-    count="$(find "$tmp" -mindepth 1 -maxdepth 1 | wc -l | tr -d ' ')"
-    if [[ "$count" == "1" ]] && [[ -d "$(find "$tmp" -mindepth 1 -maxdepth 1 -type d)" ]]; then
-        source="$(find "$tmp" -mindepth 1 -maxdepth 1 -type d)"
+    if ! valid_name "$name"; then
+        echo -e "${RED}❌ Usage: rizo upload <name> <zip>${RESET}"
+        return 1
     fi
 
-    cp -R "$source"/. "$d"/
-    rm -rf "$tmp"
-    echo "✅ Uploaded and extracted into: $d"
-    echo "Run: rizo install $name"
+    local dir
+    dir="$(bot_dir "$name")"
+
+    [[ -d "$dir" ]] || {
+        echo -e "${RED}❌ Bot doesn't exist. Create it first.${RESET}"
+        return 1
+    }
+
+    [[ -f "$zip" ]] || {
+        echo -e "${RED}❌ ZIP file not found.${RESET}"
+        return 1
+    }
+
+    command -v unzip >/dev/null 2>&1 || {
+        echo -e "${RED}❌ unzip missing.${RESET}"
+        echo "Run: pkg install -y unzip"
+        return 1
+    }
+
+    echo -e "${MAGENTA}[*] Extracting bot...${RESET}"
+
+    unzip -o "$zip" -d "$dir" >/dev/null
+
+    echo
+    echo -e "${GREEN}✔ BOT UPLOAD COMPLETE${RESET}"
+    echo -e "${WHITE}Location:${RESET} $dir"
 }
+
+# -------------------- INSTALL --------------------
+
+install_bot() {
+
+    local name="${1:-}"
+
+    valid_name "$name" || {
+        echo -e "${RED}❌ Usage: rizo install <name>${RESET}"
+        return 1
+    }
+
+    local dir
+    dir="$(bot_dir "$name")"
+
+    [[ -d "$dir" ]] || {
+        echo -e "${RED}❌ Bot not found.${RESET}"
+        return 1
+    }
+
+    [[ -x "$dir/venv/bin/pip" ]] || {
+        python -m venv "$dir/venv"
+    }
+
+    echo
+    echo -e "${BLUE}╔════════════════════════════════════════╗${RESET}"
+    echo -e "${BLUE}║       INSTALLING BOT DEPENDENCIES      ║${RESET}"
+    echo -e "${BLUE}╚════════════════════════════════════════╝${RESET}"
+
+    "$dir/venv/bin/python" -m pip install --upgrade pip
+
+    if [[ -f "$dir/requirements.txt" ]]; then
+        "$dir/venv/bin/pip" install -r "$dir/requirements.txt"
+    fi
+
+    echo
+    echo -e "${GREEN}✔ INSTALLATION COMPLETE${RESET}"
+}
+
+# -------------------- ENTRY --------------------
 
 set_entry() {
-    local name="${1:-}" entry="${2:-}" d
-    valid_name "$name" || die "Usage: rizo entry <bot-name> <file>"
-    d="$(bot_dir "$name")"
-    [[ -d "$d" ]] || die "Bot does not exist: $name"
-    [[ -f "$d/$entry" ]] || die "Entry file not found: $entry"
-    write_meta "$name" "$entry"
-    echo "✅ Entry set to: $entry"
+
+    local name="${1:-}"
+    local entry="${2:-}"
+
+    valid_name "$name" || {
+        echo -e "${RED}❌ Usage: rizo entry <name> <file>${RESET}"
+        return 1
+    }
+
+    local dir
+    dir="$(bot_dir "$name")"
+
+    [[ -f "$dir/$entry" ]] || {
+        echo -e "${RED}❌ File not found: $entry${RESET}"
+        return 1
+    }
+
+    echo "ENTRY=$entry" > "$dir/.rizo-meta"
+
+    echo -e "${GREEN}✔ Startup file set: $entry${RESET}"
 }
+
+# -------------------- START --------------------
 
 start_bot() {
-    local name="${1:-}" d entry sess logfile
-    valid_name "$name" || die "Usage: rizo start <bot-name>"
-    d="$(bot_dir "$name")"
-    [[ -d "$d" ]] || die "Bot does not exist: $name"
-    is_running "$name" && { echo "🟢 Already running: $name"; return 0; }
 
-    ensure_venv "$d"
-    entry="$(load_entry "$d")"
-    [[ -n "$entry" ]] || die "No entry file found. Use: rizo entry $name <file>"
-    [[ -f "$d/$entry" ]] || die "Entry file missing: $entry"
+    local name="${1:-}"
+
+    valid_name "$name" || {
+        echo -e "${RED}❌ Usage: rizo start <name>${RESET}"
+        return 1
+    }
+
+    local dir
+    dir="$(bot_dir "$name")"
+
+    [[ -d "$dir" ]] || {
+        echo -e "${RED}❌ Bot not found.${RESET}"
+        return 1
+    }
+
+    if is_running "$name"; then
+        echo -e "${YELLOW}⚠ Bot already running.${RESET}"
+        return 0
+    fi
+
+    local entry="bot.py"
+
+    if [[ -f "$dir/.rizo-meta" ]]; then
+        source "$dir/.rizo-meta"
+        entry="${ENTRY:-bot.py}"
+    elif [[ -f "$dir/main.py" ]]; then
+        entry="main.py"
+    fi
+
+    [[ -f "$dir/$entry" ]] || {
+        echo -e "${RED}❌ Entry file not found: $entry${RESET}"
+        return 1
+    }
 
     local logfile
-    logfile="$(log_file "$name")"
+    logfile="$(bot_log "$name")"
+
     touch "$logfile"
 
-    sess="$(session "$name")"
-    tmux new-session -d -s "$sess"
-    tmux send-keys -t "$sess" "cd $(printf '%q' "$d")" C-m
-    tmux send-keys -t "$sess" "source venv/bin/activate" C-m
+    tmux new-session -d -s "$(bot_session "$name")"
 
-    if [[ "$entry" == *.sh ]]; then
-        tmux send-keys -t "$sess" "chmod +x $(printf '%q' "$entry")" C-m
-        tmux send-keys -t "$sess" "while true; do ./${entry@Q} >> $(printf '%q' "$logfile") 2>&1; code=\$?; echo \"[RIZO] exited \$code - restarting in 3s\" >> $(printf '%q' "$logfile"); sleep 3; done" C-m
-    else
-        tmux send-keys -t "$sess" "while true; do python $(printf '%q' "$entry") >> $(printf '%q' "$logfile") 2>&1; code=\$?; echo \"[RIZO] exited \$code - restarting in 3s\" >> $(printf '%q' "$logfile"); sleep 3; done" C-m
-    fi
+    tmux send-keys \
+        -t "$(bot_session "$name")" \
+        "cd $(printf '%q' "$dir") && source venv/bin/activate && while true; do python $(printf '%q' "$entry") >> $(printf '%q' "$logfile") 2>&1; echo '[RIZO] Bot stopped/crashed - restarting in 3s' >> $(printf '%q' "$logfile"); sleep 3; done" \
+        C-m
 
-    echo "🚀 Started: $name"
+    echo
+    echo -e "${GREEN}╔════════════════════════════════════════╗${RESET}"
+    echo -e "${GREEN}║           BOT IS ONLINE 🚀             ║${RESET}"
+    echo -e "${GREEN}╚════════════════════════════════════════╝${RESET}"
+    echo
+    echo -e "${WHITE}Bot:${RESET} $name"
+    echo -e "${WHITE}Entry:${RESET} $entry"
 }
+
+# -------------------- STOP --------------------
 
 stop_bot() {
+
     local name="${1:-}"
-    valid_name "$name" || die "Usage: rizo stop <bot-name>"
+
+    valid_name "$name" || {
+        echo -e "${RED}❌ Usage: rizo stop <name>${RESET}"
+        return 1
+    }
+
     if is_running "$name"; then
-        tmux kill-session -t "$(session "$name")"
-        echo "🛑 Stopped: $name"
+        tmux kill-session -t "$(bot_session "$name")"
+        echo -e "${RED}■ Bot stopped: $name${RESET}"
     else
-        echo "ℹ️ Not running: $name"
+        echo -e "${YELLOW}⚠ Bot is already stopped.${RESET}"
     fi
 }
 
+# -------------------- RESTART --------------------
+
 restart_bot() {
+
     stop_bot "$1" >/dev/null 2>&1 || true
+
     sleep 1
+
     start_bot "$1"
 }
 
+# -------------------- STATUS --------------------
+
 status_bot() {
+
     local name="${1:-}"
-    valid_name "$name" || die "Usage: rizo status <bot-name>"
+
+    valid_name "$name" || {
+        echo -e "${RED}❌ Usage: rizo status <name>${RESET}"
+        return 1
+    }
+
+    echo
+
     if is_running "$name"; then
-        echo "🟢 $name  RUNNING"
+        echo -e "${GREEN}╔══════════════════════════════════════╗${RESET}"
+        echo -e "${GREEN}║          ● ONLINE / RUNNING         ║${RESET}"
+        echo -e "${GREEN}╚══════════════════════════════════════╝${RESET}"
     else
-        echo "🔴 $name  STOPPED"
+        echo -e "${RED}╔══════════════════════════════════════╗${RESET}"
+        echo -e "${RED}║          ● OFFLINE / STOPPED        ║${RESET}"
+        echo -e "${RED}╚══════════════════════════════════════╝${RESET}"
     fi
+
+    echo -e "${WHITE}Bot:${RESET} $name"
 }
+
+# -------------------- LIST --------------------
 
 list_bots() {
-    local found=0 name d
-    printf '%-24s %s\n' "BOT" "STATUS"
-    printf '%-24s %s\n' "------------------------" "--------"
+
+    echo
+    echo -e "${BOLD}${MAGENTA}┌───────────────────────────────────────────────────────────┐${RESET}"
+    echo -e "${MAGENTA}│                 RIZO BOT SERVERS                         │${RESET}"
+    echo -e "${MAGENTA}├────────────────────────┬──────────────────────────────────┤${RESET}"
+    echo -e "${MAGENTA}│ BOT NAME               │ STATUS                           │${RESET}"
+    echo -e "${MAGENTA}├────────────────────────┼──────────────────────────────────┤${RESET}"
+
+    local found=0
+    local dir
+    local name
+
     shopt -s nullglob
-    for d in "$BOTS_DIR"/*; do
-        [[ -d "$d" ]] || continue
-        name="$(basename "$d")"
+
+    for dir in "$BOTS_DIR"/*; do
+
+        [[ -d "$dir" ]] || continue
+
         found=1
+
+        name="$(basename "$dir")"
+
         if is_running "$name"; then
-            printf '%-24s %s\n' "$name" "🟢 RUNNING"
+            printf "${MAGENTA}│${RESET} %-22s ${MAGENTA}│${RESET} ${GREEN}● RUNNING${RESET}                       ${MAGENTA}│${RESET}\n" "$name"
         else
-            printf '%-24s %s\n' "$name" "🔴 STOPPED"
+            printf "${MAGENTA}│${RESET} %-22s ${MAGENTA}│${RESET} ${RED}● STOPPED${RESET}                       ${MAGENTA}│${RESET}\n" "$name"
         fi
+
     done
+
     shopt -u nullglob
-    ((found)) || echo "No bots created."
+
+    echo -e "${MAGENTA}└────────────────────────┴──────────────────────────────────┘${RESET}"
+
+    if [[ "$found" == "0" ]]; then
+        echo -e "${GRAY}No bots created yet.${RESET}"
+    fi
+
+    echo
 }
+
+# -------------------- LOGS --------------------
 
 logs_bot() {
-    local name="${1:-}" file
-    valid_name "$name" || die "Usage: rizo logs <bot-name>"
-    file="$(log_file "$name")"
-    [[ -f "$file" ]] || die "No log file for: $name"
-    tail -n 100 "$file"
+
+    local name="${1:-}"
+
+    valid_name "$name" || {
+        echo -e "${RED}❌ Usage: rizo logs <name>${RESET}"
+        return 1
+    }
+
+    local logfile
+    logfile="$(bot_log "$name")"
+
+    [[ -f "$logfile" ]] || {
+        echo -e "${YELLOW}No logs available.${RESET}"
+        return 1
+    }
+
+    echo -e "${CYAN}━━━ RIZO LIVE LOG BUFFER ━━━${RESET}"
+    tail -n 100 "$logfile"
 }
 
-follow_logs() {
-    local name="${1:-}" file
-    valid_name "$name" || die "Usage: rizo logs-live <bot-name>"
-    file="$(log_file "$name")"
-    touch "$file"
-    tail -n 50 -f "$file"
+# -------------------- LIVE LOGS --------------------
+
+live_logs() {
+
+    local name="${1:-}"
+
+    local logfile
+    logfile="$(bot_log "$name")"
+
+    touch "$logfile"
+
+    echo -e "${CYAN}Following logs for $name ...${RESET}"
+
+    tail -f "$logfile"
 }
 
-delete_bot() {
-    local name="${1:-}" d answer
-    valid_name "$name" || die "Usage: rizo delete <bot-name>"
-    d="$(bot_dir "$name")"
-    [[ -d "$d" ]] || die "Bot does not exist: $name"
-    read -r -p "Delete '$name' and all its files? [y/N] " answer
-    [[ "$answer" =~ ^[Yy]$ ]] || { echo "Cancelled."; return; }
-    stop_bot "$name" >/dev/null 2>&1 || true
-    rm -rf "$d" "$(log_file "$name")"
-    echo "🗑️ Deleted: $name"
-}
+# -------------------- INFO --------------------
 
 info_bot() {
-    local name="${1:-}" d entry
-    valid_name "$name" || die "Usage: rizo info <bot-name>"
-    d="$(bot_dir "$name")"
-    [[ -d "$d" ]] || die "Bot does not exist: $name"
-    entry="$(load_entry "$d")"
-    echo "Name:      $name"
-    echo "Directory: $d"
-    echo "Entry:     ${entry:-none}"
-    echo "Status:    $(is_running "$name" && echo RUNNING || echo STOPPED)"
-    if [[ -x "$d/venv/bin/python" ]]; then
-        echo "Python:    $("$d/venv/bin/python" --version 2>&1)"
+
+    local name="${1:-}"
+
+    valid_name "$name" || {
+        echo -e "${RED}❌ Usage: rizo info <name>${RESET}"
+        return 1
+    }
+
+    local dir
+    dir="$(bot_dir "$name")"
+
+    [[ -d "$dir" ]] || {
+        echo -e "${RED}❌ Bot not found.${RESET}"
+        return 1
+    }
+
+    echo
+    line
+
+    echo -e "${CYAN}BOT NAME   ${WHITE}: ${MAGENTA}$name${RESET}"
+    echo -e "${CYAN}DIRECTORY  ${WHITE}: ${WHITE}$dir${RESET}"
+
+    if is_running "$name"; then
+        echo -e "${CYAN}STATUS     ${WHITE}: ${GREEN}RUNNING${RESET}"
+    else
+        echo -e "${CYAN}STATUS     ${WHITE}: ${RED}STOPPED${RESET}"
     fi
+
+    if [[ -f "$dir/.rizo-meta" ]]; then
+        source "$dir/.rizo-meta"
+        echo -e "${CYAN}ENTRY      ${WHITE}: ${YELLOW}${ENTRY:-unknown}${RESET}"
+    fi
+
+    line
+    echo
 }
+
+# -------------------- SYSTEM --------------------
 
 system_info() {
-    echo "RIZO Mini VPS"
-    echo "Home: $RIZO_HOME"
-    echo "Bots: $(find "$BOTS_DIR" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')"
-    if command -v free >/dev/null 2>&1; then free -h | head -n 2; fi
-    if command -v df >/dev/null 2>&1; then df -h "$RIZO_HOME" | tail -n 1; fi
+
+    echo
+    echo -e "${BOLD}${BLUE}╔════════════════════════════════════════╗${RESET}"
+    echo -e "${BOLD}${BLUE}║           RIZO SYSTEM MONITOR          ║${RESET}"
+    echo -e "${BOLD}${BLUE}╚════════════════════════════════════════╝${RESET}"
+
+    echo
+
+    echo -e "${CYAN}USER:${RESET} $USER"
+    echo -e "${CYAN}HOME:${RESET} $HOME"
+
+    if command -v python >/dev/null 2>&1; then
+        echo -e "${CYAN}PYTHON:${RESET} $(python --version 2>&1)"
+    fi
+
+    if command -v tmux >/dev/null 2>&1; then
+        echo -e "${CYAN}TMUX:${RESET} $(tmux -V)"
+    fi
+
+    echo
+
+    echo -e "${YELLOW}STORAGE${RESET}"
+
+    df -h "$HOME" 2>/dev/null | tail -n 1
+
+    echo
 }
+
+# -------------------- DELETE --------------------
+
+delete_bot() {
+
+    local name="${1:-}"
+
+    valid_name "$name" || {
+        echo -e "${RED}❌ Usage: rizo delete <name>${RESET}"
+        return 1
+    }
+
+    local dir
+    dir="$(bot_dir "$name")"
+
+    [[ -d "$dir" ]] || {
+        echo -e "${RED}❌ Bot not found.${RESET}"
+        return 1
+    }
+
+    echo -e "${RED}⚠ WARNING: This deletes the complete bot.${RESET}"
+
+    read -r -p "Type DELETE to continue: " answer
+
+    [[ "$answer" == "DELETE" ]] || {
+        echo -e "${YELLOW}Cancelled.${RESET}"
+        return
+    }
+
+    stop_bot "$name" >/dev/null 2>&1 || true
+
+    rm -rf "$dir"
+    rm -f "$(bot_log "$name")"
+
+    echo -e "${GREEN}✔ Bot deleted.${RESET}"
+}
+
+# -------------------- HELP --------------------
 
 help_menu() {
-    cat <<'EOF'
 
-RIZO Mini VPS
-────────────────────────────────────
-rizo                         Dashboard
-rizo create NAME             Create a bot
-rizo upload NAME FILE.zip    Upload/extract ZIP
-rizo install NAME            Install requirements
-rizo entry NAME FILE         Set startup file
-rizo start NAME              Start + auto-restart
-rizo stop NAME               Stop
-rizo restart NAME            Restart
-rizo status NAME             Status
-rizo list                    List bots
-rizo logs NAME               Last 100 log lines
-rizo logs-live NAME          Follow live logs
-rizo info NAME               Bot information
-rizo system                 Phone/storage information
-rizo delete NAME             Delete bot
-rizo update                 Pull latest GitHub version
-rizo help                    Help
+    banner
 
-Each bot has its own Python virtual environment.
-EOF
+    command_panel
+
+    echo -e "${WHITE}Examples:${RESET}"
+    echo
+    echo -e "${CYAN}rizo create mybot${RESET}"
+    echo -e "${CYAN}rizo upload mybot ~/storage/downloads/mybot.zip${RESET}"
+    echo -e "${CYAN}rizo install mybot${RESET}"
+    echo -e "${CYAN}rizo start mybot${RESET}"
+    echo -e "${CYAN}rizo status mybot${RESET}"
+    echo -e "${CYAN}rizo logs mybot${RESET}"
+    echo
 }
 
-update_manager() {
-    local repo="${RIZO_REPO_URL:-}"
-    [[ -n "$repo" ]] || die "Set RIZO_REPO_URL first, or use the GitHub installer's update command."
-    command -v curl >/dev/null 2>&1 || die "Install curl: pkg install -y curl"
-    curl -fsSL "$repo" -o "$SELF" || die "Update download failed"
-    chmod +x "$SELF"
-    echo "✅ RIZO manager updated."
-}
+# -------------------- DASHBOARD --------------------
 
 dashboard() {
-    echo
-    echo "╔══════════════════════════════════════╗"
-    echo "║        R I Z O   M I N I   V P S    ║"
-    echo "║          Android Bot Hosting        ║"
-    echo "╚══════════════════════════════════════╝"
-    echo
+
+    banner
+
     list_bots
+
+    echo -e "${BOLD}${WHITE}QUICK COMMANDS${RESET}"
     echo
-    echo "Run 'rizo help' for commands."
+    echo -e "${RED}›${RESET} ${CYAN}rizo create NAME${RESET}"
+    echo -e "${MAGENTA}›${RESET} ${CYAN}rizo upload NAME FILE.zip${RESET}"
+    echo -e "${BLUE}›${RESET} ${CYAN}rizo start NAME${RESET}"
+    echo -e "${GREEN}›${RESET} ${CYAN}rizo status NAME${RESET}"
+    echo -e "${YELLOW}›${RESET} ${CYAN}rizo help${RESET}"
+    echo
 }
 
+# -------------------- MAIN --------------------
+
 case "${1:-}" in
-    create) create_bot "${2:-}" ;;
-    upload) upload_bot "${2:-}" "${3:-}" ;;
-    install) install_bot "${2:-}" ;;
-    entry) set_entry "${2:-}" "${3:-}" ;;
-    start) start_bot "${2:-}" ;;
-    stop) stop_bot "${2:-}" ;;
-    restart) restart_bot "${2:-}" ;;
-    status) [[ -n "${2:-}" ]] && status_bot "$2" || list_bots ;;
-    list) list_bots ;;
-    logs) logs_bot "${2:-}" ;;
-    logs-live) follow_logs "${2:-}" ;;
-    info) info_bot "${2:-}" ;;
-    system) system_info ;;
-    delete) delete_bot "${2:-}" ;;
-    update) update_manager ;;
-    help|-h|--help) help_menu ;;
-    "") dashboard ;;
-    *) echo "❌ Unknown command: $1"; help_menu; exit 1 ;;
+
+    create)
+        create_bot "${2:-}"
+        ;;
+
+    upload)
+        upload_bot "${2:-}" "${3:-}"
+        ;;
+
+    install)
+        install_bot "${2:-}"
+        ;;
+
+    entry)
+        set_entry "${2:-}" "${3:-}"
+        ;;
+
+    start)
+        start_bot "${2:-}"
+        ;;
+
+    stop)
+        stop_bot "${2:-}"
+        ;;
+
+    restart)
+        restart_bot "${2:-}"
+        ;;
+
+    status)
+        if [[ -n "${2:-}" ]]; then
+            status_bot "$2"
+        else
+            list_bots
+        fi
+        ;;
+
+    list)
+        list_bots
+        ;;
+
+    logs)
+        logs_bot "${2:-}"
+        ;;
+
+    logs-live)
+        live_logs "${2:-}"
+        ;;
+
+    info)
+        info_bot "${2:-}"
+        ;;
+
+    system)
+        system_info
+        ;;
+
+    delete)
+        delete_bot "${2:-}"
+        ;;
+
+    help|--help|-h)
+        help_menu
+        ;;
+
+    "")
+        dashboard
+        ;;
+
+    *)
+        echo -e "${RED}❌ Unknown command: $1${RESET}"
+        echo
+        echo -e "${CYAN}Run: rizo help${RESET}"
+        ;;
+
 esac
