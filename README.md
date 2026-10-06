@@ -1,257 +1,507 @@
 # ⚡ RIZO HACKER — ANDROID MINI VPS
 
-<p align="center">
+## 🌈 Android + Termux Bot Hosting
+
+**Python Bot Hosting • Telegram Bots • Auto Restart • Logs • Process Manager**
+
+[![RIZO](https://img.shields.io/badge/RIZO-HACKER-ff0055?style=for-the-badge&logo=android&logoColor=white)](https://github.com/rizolegend5-art/rizo-mini-vps)
+[![Platform](https://img.shields.io/badge/PLATFORM-ANDROID-00e5ff?style=for-the-badge&logo=android&logoColor=white)](https://github.com/rizolegend5-art/rizo-mini-vps)
+[![Shell](https://img.shields.io/badge/LANGUAGE-SHELL-7dff00?style=for-the-badge&logo=gnu-bash&logoColor=white)](https://github.com/rizolegend5-art/rizo-mini-vps)
+[![License](https://img.shields.io/badge/LICENSE-MIT-bd00ff?style=for-the-badge)](LICENSE)
+
+🔴 **RED** · 🟠 **ORANGE** · 🟡 **YELLOW** · 🟢 **GREEN** · 🔵 **BLUE** · 🟣 **PURPLE**
+
+---
+
+## 🚀 RIZO MINI VPS
+
+**RIZO Mini VPS** is a lightweight Android + Termux bot manager for managing Python bot projects directly from your Android device.
 
 ```text
-██████╗ ██╗███████╗ ██████╗
-██╔══██╗██║╚══███╔╝██╔═══██╗
-██████╔╝██║  ███╔╝ ██║   ██║
-██╔══██╗██║ ███╔╝  ██║   ██║
-██║  ██║██║███████╗╚██████╔╝
-╚═╝  ╚═╝╚═╝╚══════╝ ╚═════╝
+                         📱 ANDROID
+                             │
+                             ▼
+                       ┌───────────┐
+                       │  TERMUX   │
+                       └─────┬─────┘
+                             │
+                             ▼
+                   ┌──────────────────┐
+                   │  RIZO MINI VPS   │
+                   └────────┬─────────┘
+                            │
+              ┌─────────────┼─────────────┐
+              ▼             ▼             ▼
+          🤖 BOT 1      🤖 BOT 2      🤖 BOT 3
+```
 
+## ✨ FEATURES
 
-🔥 ANDROID MINI VPS • BOT HOSTING • AUTO RESTART
-Python Bots • Telegram Bots • Virtual Environment • Logs • Process Manager
+| Feature | Status |
+|---|---|
+| 🐍 Python Bot Hosting | ✅ |
+| 🤖 Telegram Bot Support | ✅ |
+| ⚡ Start / Stop / Restart | ✅ |
+| 📊 Bot Status & List | ✅ |
+| 📜 Normal & Live Logs | ✅ |
+| 📦 ZIP Upload & Extraction | ✅ |
+| 🧪 Separate Virtual Environment | ✅ |
+| 🔐 `.env` Support | ✅ |
+| 🔁 Auto Restart | ✅ |
+| 🖥️ System Information | ✅ |
+| 🗑️ Bot Delete | ✅ |
+| 🌈 RIZO HACKER CLI | ✅ |
 
+---
 
-🌈 RIZO MINI VPS
-Turn your Android phone + Termux into a simple personal bot-hosting environment.
-RIZO Mini VPS provides:
-🐍 Python bot hosting
-🤖 Telegram bot support
-⚡ Start / Stop / Restart
-🔄 Automatic restart
-📦 ZIP upload & extraction
-🧪 Separate virtual environment
-📜 Live logs
-🔐 .env support
-📊 Bot status
-🖥️ System information
-🗑️ Bot management
-🎨 RIZO HACKER CLI interface
-⚡ INSTALLATION
+# ⚡ INSTALLATION
 
-Open Termux and run:
+### 1. Update Termux
 
+```bash
 pkg update -y
+pkg upgrade -y
+```
+
+### 2. Install Git
+
+```bash
 pkg install -y git
-Clone the repository:
+```
+
+### 3. Clone RIZO
+
+```bash
 git clone https://github.com/rizolegend5-art/rizo-mini-vps.git
-Enter the project:
+```
+
+### 4. Enter the project
+
+```bash
 cd rizo-mini-vps
-Install RIZO Mini VPS:
+```
+
+### 5. Install RIZO
+
+```bash
 bash install.sh
-After installation:
-rizo
+```
 
-🚀 QUICK START
-1️⃣ Create a bot
+### 6. Start RIZO
+
+```bash
+rizo
+```
+
+---
+
+# 🎯 QUICK START
+
+### Create a bot
+
+```bash
 rizo create mybot
-2️⃣ Allow storage access
+```
+
+### Give Termux storage access
+
+```bash
 termux-setup-storage
-3️⃣ Upload your bot ZIP
+```
+
+### Upload a bot ZIP
+
+```bash
 rizo upload mybot ~/storage/downloads/mybot.zip
-4️⃣ Install requirements
+```
+
+### Install requirements
+
+```bash
 rizo install mybot
-5️⃣ Set entry file
+```
+
+### Set entry file
+
+```bash
 rizo entry mybot main.py
-6️⃣ Start bot
+```
+
+### Start the bot
+
+```bash
 rizo start mybot
-🎛️ RIZO COMMAND CENTER
-Command
-Function
+```
 
-rizo
-Open dashboard
-rizo create NAME
-Create bot
-rizo upload NAME ZIP
-Upload ZIP
-rizo install NAME
-Install requirements
-rizo entry NAME FILE
-Set entry file
-rizo start NAME
-Start bot
-rizo stop NAME
-Stop bot
-rizo restart NAME
-Restart bot
-rizo status NAME
-Bot status
+---
+
+# 🎛️ COMMAND CENTER
+
+```text
+╔══════════════════════════════════════════════╗
+║            ⚡ RIZO HACKER PANEL ⚡            ║
+╠══════════════════════════════════════════════╣
+║  CREATE       → Create a new bot             ║
+║  UPLOAD       → Upload bot ZIP               ║
+║  INSTALL      → Install requirements         ║
+║  ENTRY        → Set entry file               ║
+║  START        → Start bot                    ║
+║  STOP         → Stop bot                     ║
+║  RESTART      → Restart bot                  ║
+║  STATUS       → Check bot status             ║
+║  LIST         → List all bots                ║
+║  LOGS         → Show bot logs                ║
+║  LIVE LOGS    → Watch live logs              ║
+║  INFO         → Bot information              ║
+║  SYSTEM       → System information           ║
+║  DELETE       → Delete bot                   ║
+║  HELP         → Show help                    ║
+╚══════════════════════════════════════════════╝
+```
+
+## 🧰 ALL COMMANDS
+
+| Command | Description |
+|---|---|
+| `rizo` | Open RIZO dashboard |
+| `rizo create NAME` | Create a bot |
+| `rizo upload NAME ZIP` | Upload ZIP |
+| `rizo install NAME` | Install requirements |
+| `rizo entry NAME FILE` | Set entry file |
+| `rizo start NAME` | Start bot |
+| `rizo stop NAME` | Stop bot |
+| `rizo restart NAME` | Restart bot |
+| `rizo status NAME` | Check status |
+| `rizo list` | List bots |
+| `rizo logs NAME` | Show logs |
+| `rizo logs-live NAME` | Live logs |
+| `rizo info NAME` | Bot information |
+| `rizo system` | System information |
+| `rizo delete NAME` | Delete bot |
+| `rizo help` | Show help |
+
+---
+
+# 🤖 MULTI-BOT HOSTING
+
+```bash
+rizo create bot1
+rizo create bot2
+rizo create bot3
+
+rizo start bot1
+rizo start bot2
+rizo start bot3
+
 rizo list
-List all bots
-rizo logs NAME
-Show logs
-rizo logs-live NAME
-Live logs
-rizo info NAME
-Bot information
-rizo system
-System information
-rizo delete NAME
-Delete bot
-rizo help
-Show help
-🔥 FEATURES
-🐍 Python Environment
-Every bot can have its own virtual environment.
-Bot A
- └── venv/
+```
 
-Bot B
- └── venv/
-
-Bot C
- └── venv/
-This helps keep bot dependencies separated.
-📦 ZIP BOT UPLOAD
-Upload your complete bot as a ZIP:
-rizo upload mybot ~/storage/downloads/mybot.zip
-RIZO extracts the project automatically.
-🔄 AUTO RESTART
-If the bot process stops unexpectedly, RIZO can restart it automatically.
-BOT START
-   ↓
-RUNNING
-   ↓
-CRASH / STOP
-   ↓
-AUTO RESTART
-   ↓
-RUNNING
-📜 LOG SYSTEM
-Check normal logs:
-rizo logs mybot
-Watch live logs:
-rizo logs-live mybot
-🔐 ENVIRONMENT VARIABLES
-Keep secrets outside your source code.
 Example:
+
+```text
+╔════════════════════════════════════╗
+║          RIZO BOT STATUS           ║
+╠════════════════════════════════════╣
+║  bot1        ● RUNNING             ║
+║  bot2        ● RUNNING             ║
+║  bot3        ○ STOPPED             ║
+╚════════════════════════════════════╝
+```
+
+---
+
+# 🔄 AUTO RESTART
+
+```text
+       ┌──────────────┐
+       │  BOT START   │
+       └──────┬───────┘
+              ▼
+       ┌──────────────┐
+       │   RUNNING    │
+       └──────┬───────┘
+              ▼
+       ┌──────────────┐
+       │ PROCESS STOP │
+       └──────┬───────┘
+              ▼
+       ┌──────────────┐
+       │ AUTO RESTART │
+       └──────┬───────┘
+              ▼
+       ┌──────────────┐
+       │   RUNNING    │
+       └──────────────┘
+```
+
+---
+
+# 📦 ZIP SUPPORT
+
+Example project:
+
+```text
+mybot.zip
+├── main.py
+├── requirements.txt
+├── config.py
+└── handlers/
+```
+
+Upload:
+
+```bash
+rizo upload mybot ~/storage/downloads/mybot.zip
+```
+
+---
+
+# 🐍 PYTHON VIRTUAL ENVIRONMENTS
+
+Each bot can have its own environment:
+
+```text
+~/rizo-vps/
+└── bots/
+    ├── bot1/
+    │   ├── main.py
+    │   ├── requirements.txt
+    │   └── venv/
+    ├── bot2/
+    │   └── venv/
+    └── bot3/
+        └── venv/
+```
+
+---
+
+# 📜 LOG SYSTEM
+
+```bash
+rizo logs mybot
+rizo logs-live mybot
+```
+
+Typical logs:
+
+```text
+~/rizo-vps/logs/
+├── bot1.log
+├── bot2.log
+└── bot3.log
+```
+
+---
+
+# 🔐 ENVIRONMENT VARIABLES
+
+Use `.env` for private configuration:
+
+```env
 BOT_TOKEN=YOUR_BOT_TOKEN
 API_KEY=YOUR_API_KEY
 OWNER_ID=YOUR_OWNER_ID
-⚠️ Never upload real tokens or API keys to GitHub.
-📁 PROJECT STRUCTURE
-The GitHub repository stays simple:
+```
+
+Python:
+
+```python
+import os
+
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+API_KEY = os.getenv("API_KEY")
+OWNER_ID = os.getenv("OWNER_ID")
+```
+
+> ⚠️ Never publish real bot tokens, API keys, passwords, sessions, or private keys to a public repository.
+
+---
+
+# 📁 PROJECT STRUCTURE
+
+GitHub root:
+
+```text
 rizo-mini-vps/
-│
 ├── vps
 ├── install.sh
 ├── uninstall.sh
 ├── README.md
 ├── .gitignore
 └── LICENSE
-Runtime data is created automatically on Android:
+```
+
+Runtime directories are created automatically:
+
+```text
 ~/rizo-vps/
-│
 ├── bots/
 ├── logs/
 ├── manager/
 └── config/
-You don't need to manually create these GitHub folders.
-🧠 HOW IT WORKS
-        📱 ANDROID
-             │
-             ▼
-        ┌───────────┐
-        │  TERMUX   │
-        └─────┬─────┘
-              │
-              ▼
-      ┌───────────────┐
-      │ RIZO MINI VPS │
-      └───────┬───────┘
-              │
-       ┌──────┼──────┐
-       ▼      ▼      ▼
-    🤖 Bot  🤖 Bot  🤖 Bot
-       │      │      │
-       ▼      ▼      ▼
-    Python  Python  Python
-🖥️ MULTI-BOT HOSTING
-You can create multiple bot projects:
-rizo create bot1
-rizo create bot2
-rizo create bot3
-Then manage them separately:
-rizo start bot1
-rizo start bot2
-rizo start bot3
-Check all bots:
-rizo list
-⚙️ UPDATE RIZO
-Pull the latest version from GitHub:
+```
+
+---
+
+# 🌈 RIZO HACKER UI
+
+```text
+╔══════════════════════════════════════════════╗
+║                                              ║
+║              R I Z O   H A C K E R          ║
+║                                              ║
+║          A N D R O I D   M I N I   V P S    ║
+║                                              ║
+║      ⚡ BUILD • HOST • MANAGE • CONTROL ⚡   ║
+║                                              ║
+╚══════════════════════════════════════════════╝
+```
+
+### RGB STATUS
+
+```text
+🔴 SYSTEM
+🟠 PROCESS
+🟡 WARNING
+🟢 RUNNING
+🔵 NETWORK
+🟣 MANAGER
+⚪ STOPPED
+```
+
+---
+
+# ⚙️ COMPLETE WORKFLOW
+
+```bash
+pkg update -y
+pkg install -y git
+git clone https://github.com/rizolegend5-art/rizo-mini-vps.git
+cd rizo-mini-vps
+bash install.sh
+termux-setup-storage
+rizo create mybot
+rizo upload mybot ~/storage/downloads/mybot.zip
+rizo install mybot
+rizo entry mybot main.py
+rizo start mybot
+rizo status mybot
+rizo logs-live mybot
+```
+
+---
+
+# 🔧 UPDATE
+
+```bash
 cd ~/rizo-mini-vps
 git pull
-Then reinstall/update the manager if required:
 bash install.sh
-🛡️ SECURITY
-Never put sensitive information directly inside public GitHub files.
-❌ Don't do this:
-BOT_TOKEN = "123456789:REAL_TOKEN"
-✅ Use environment variables:
-import os
+```
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-And keep secrets inside:
-.env
-The repository .gitignore is configured to ignore .env.
-📱 ANDROID NOTE
-RIZO Mini VPS runs through Termux.
-Android may stop background processes because of:
-Battery optimization
-Background restrictions
-RAM pressure
-Android process management
-Device restart
-For better reliability, allow Termux to run in the background and disable battery optimization for it when your device provides that option.
-This project is a personal Android hosting environment, not a replacement for a professional cloud VPS.
-🎨 RIZO HACKER MODE
-╔══════════════════════════════════════╗
-║          R I Z O   H A C K E R      ║
-║                                      ║
-║        ANDROID MINI VPS              ║
-║                                      ║
-║  [1] CREATE BOT                      ║
-║  [2] START BOT                       ║
-║  [3] STOP BOT                        ║
-║  [4] RESTART BOT                     ║
-║  [5] STATUS                           ║
-║  [6] LOGS                             ║
-║  [7] SYSTEM                           ║
-║  [8] DELETE                           ║
-╚══════════════════════════════════════╝
-⚡ COMMAND EXAMPLE
-$ rizo list
+---
 
-╔════════════════════════════════╗
-║       RIZO BOT MANAGER         ║
-╠════════════════════════════════╣
-║ bot1        RUNNING            ║
-║ bot2        STOPPED            ║
-║ bot3        RUNNING            ║
-╚════════════════════════════════╝
-🧩 REQUIREMENTS
-You need:
-Android
-Termux
-Python
-Git
-tmux
-unzip
-Internet connection
-❤️ RIZO MINI VPS
-Built for people who want a simple way to run their own Python bots directly from Android.
-██████╗ ██╗███████╗ ██████╗
-██╔══██╗██║╚══███╔╝██╔═══██╗
-██████╔╝██║  ███╔╝ ██║   ██║
-██╔══██╗██║ ███╔╝  ██║   ██║
-██║  ██║██║███████╗╚██████╔╝
-╚═╝  ╚═╝╚═╝╚══════╝ ╚═════╝
+# 🗑️ UNINSTALL
 
-        RIZO HACKER
-     ANDROID MINI VPS
+```bash
+bash uninstall.sh
+```
 
-⚡ BUILD • HOST • MANAGE • CONTROL ⚡
+---
+
+# 📱 ANDROID LIMITATIONS
+
+RIZO runs through Termux, so Android background-management rules still apply.
+
+Possible causes of a bot stopping:
+
+- 🔋 Battery optimization
+- 💤 Background restrictions
+- 🧠 RAM pressure
+- 📱 Android process management
+- 🔄 Device restart
+- 🌐 Network interruption
+
+For better reliability, allow Termux to run in the background and review battery-optimization settings on your Android device.
+
+> **RIZO Mini VPS is a personal Android hosting environment and is not the same as a professional cloud VPS.**
+
+---
+
+# 🧪 TROUBLESHOOTING
+
+### Bot does not start
+
+```bash
+rizo status mybot
+rizo logs mybot
+ls ~/rizo-vps/bots/mybot
+```
+
+### Requirements are missing
+
+```bash
+rizo install mybot
+```
+
+### Wrong entry file
+
+```bash
+rizo entry mybot main.py
+rizo restart mybot
+```
+
+### Bot stopped
+
+```bash
+rizo status mybot
+rizo logs mybot
+```
+
+---
+
+# 🌐 GITHUB
+
+<div align="center">
+
+[![GitHub](https://img.shields.io/badge/GitHub-RIZO--MINI--VPS-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/rizolegend5-art/rizo-mini-vps)
+
+⭐ **Star the repository if you like the project.**
+
+</div>
+
+---
+
+# 📜 LICENSE
+
+This project is licensed under the **MIT License**.
+
+See [`LICENSE`](LICENSE) for details.
+
+---
+
+<div align="center">
+
+```text
+╔══════════════════════════════════════════════╗
+║                                              ║
+║       ██████╗ ██╗███████╗ ██████╗           ║
+║       ██╔══██╗██║╚══███╔╝██╔═══██╗          ║
+║       ██████╔╝██║  ███╔╝ ██║   ██║          ║
+║       ██╔══██╗██║ ███╔╝  ██║   ██║          ║
+║       ██║  ██║██║███████╗╚██████╔╝          ║
+║       ╚═╝  ╚═╝╚═╝╚══════╝ ╚═════╝           ║
+║                                              ║
+║             ⚡ RIZO HACKER ⚡                ║
+║            ANDROID MINI VPS                 ║
+║                                              ║
+╚══════════════════════════════════════════════╝
+```
+
+### 🔴 🟠 🟡 🟢 🔵 🟣
+
+**BUILD • HOST • MANAGE • CONTROL**
+
+### Made with ⚡ by RIZO
+
+</div>
